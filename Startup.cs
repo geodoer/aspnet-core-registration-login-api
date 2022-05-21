@@ -34,6 +34,27 @@ namespace WebApi
             services.AddSwaggerGen(setup =>
             {
                 setup.SwaggerDoc("v1", new OpenApiInfo() { Title = "登录DEMO", Version = "v1" });
+                //添加安全定义
+                setup.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Description = "请输入token，格式为 \"Bearer 你的token\"（注意中间必须有空格）",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,
+                    BearerFormat = "JWT",
+                    Scheme = "Bearer"
+                });
+                //添加安全要求
+                setup.AddSecurityRequirement(new OpenApiSecurityRequirement {
+                    {
+                        new OpenApiSecurityScheme{
+                            Reference =new OpenApiReference{
+                                Type = ReferenceType.SecurityScheme,
+                                Id ="Bearer"
+                            }
+                        },new string[]{ }
+                    }
+                });
             });
 
             //
