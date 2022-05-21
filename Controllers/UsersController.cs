@@ -15,14 +15,18 @@ using WebApi.Entities;
 
 namespace WebApi.Controllers
 {
-    [Authorize]
+    /// <summary>
+    /// UsersController定义和处理与用户相关的Web API
+    /// 包括身份验证、注册和标准CRUD操作
+    /// </summary>
+    [Authorize] //打开验证。只有验证通过才能访问此Controller下的方法
     [ApiController]
     [Route("[controller]")]
     public class UsersController : ControllerBase
     {
         private IUserService _userService;
-        private IMapper _mapper;
-        private readonly AppSettings _appSettings;
+        private IMapper _mapper;                    //对象属性映射
+        private readonly AppSettings _appSettings;  //配置文件中的AppSettings
 
         public UsersController(
             IUserService userService,
@@ -34,30 +38,35 @@ namespace WebApi.Controllers
             _appSettings = appSettings.Value;
         }
 
-        [AllowAnonymous]
+        [AllowAnonymous]    //覆盖controller上的[Authorize]属性，使得客户端没有验证，也能访问
         [HttpPost("authenticate")]
         public IActionResult Authenticate([FromBody]UserDto userDto)
         {
+            //验证账号、密码
             var user = _userService.Authenticate(userDto.Username, userDto.Password);
 
             if (user == null)
                 return BadRequest(new { message = "Username or password is incorrect" });
 
+            //
+            //验证成功后，使用JwtSecurityTokenHandler生成一个JWT（Json Web token）
+            //
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
-            var tokenDescriptor = new SecurityTokenDescriptor
+            var key = Encoding.ASCII.GetBytes(_appSettings.Secret); //使用存储在appsettings.json中的密钥，进行数字签名
+            var tokenDescriptor = new SecurityTokenDescriptor   //token的描述
             {
                 Subject = new ClaimsIdentity(new Claim[] 
                 {
-                    new Claim(ClaimTypes.Name, user.Id.ToString())
+                    new Claim(ClaimTypes.Name, user.Id.ToString()) //Name = User.ID
                 }),
-                Expires = DateTime.UtcNow.AddDays(7),
+                Expires = DateTime.UtcNow.AddDays(7),   //时间
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
-            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var token = tokenHandler.CreateToken(tokenDescriptor);  //用token描述来创建出token
             var tokenString = tokenHandler.WriteToken(token);
 
-            // return basic user info (without password) and token to store client side
+            //将 用户基本信息（不包含密码）、token 返回给客户端
+            //客户端需要在后续的请求中附带这个token，具体是在HTTP Authorization header中加上token
             return Ok(new {
                 Id = user.Id,
                 Username = user.Username,

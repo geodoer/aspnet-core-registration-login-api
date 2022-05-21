@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using WebApi.Entities;
@@ -25,6 +25,9 @@ namespace WebApi.Services
             _context = context;
         }
 
+        /// <summary>
+        /// 验证
+        /// </summary>
         public User Authenticate(string username, string password)
         {
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
@@ -36,7 +39,7 @@ namespace WebApi.Services
             if (user == null)
                 return null;
 
-            // check if password is correct
+            //检查密码是否正确
             if (!VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
                 return null;
 
@@ -54,6 +57,9 @@ namespace WebApi.Services
             return _context.Users.Find(id);
         }
 
+        /// <summary>
+        /// 创建用户
+        /// </summary>
         public User Create(User user, string password)
         {
             // validation
@@ -118,8 +124,7 @@ namespace WebApi.Services
             }
         }
 
-        // private helper methods
-
+        //获得密码Hash（把密码加密）
         private static void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
         {
             if (password == null) throw new ArgumentNullException("password");
